@@ -4,7 +4,7 @@ import Card from '../UI/Card/Card';
 import classes from './Login.module.css';
 import Button from '../UI/Button/Button';
 
-
+//reducer for an email 
 const emailReducer = (state, action) => {
   switch (action.type) {
     case 'user_input': {
@@ -28,37 +28,72 @@ const emailReducer = (state, action) => {
   }
 
 }
+//reducer func for the password of the form
+const pswdReducer = (state, action) => {
+  switch (action.type) {
+    case 'password_input': {
+      return {
+        value: action.val,
+        isValid: action.val.trim().length > 6
+      };
+    }
+    case 'password_valid': {
+      return {
+        value: state.value,
+        isValid: state.value.trim().length > 6
+      };
+    }
+    default: {
+      return {
+        value: '',
+        isValid: false
+      }
+    }
+  }
+
+}
 const Login = (props) => {
   // const [enteredEmail, setEnteredEmail] = useState('');
   // const [emailIsValid, setEmailIsValid] = useState();
-  const [enteredPassword, setEnteredPassword] = useState('');
-  const [passwordIsValid, setPasswordIsValid] = useState();
+  // const [enteredPassword, setEnteredPassword] = useState('');
+  // const [passwordIsValid, setPasswordIsValid] = useState();
   const [formIsValid, setFormIsValid] = useState(false);
 
 
   const [emailState, dispatchEmail] = useReducer(emailReducer, { value: '', isValid: null });
+  const [passwordState,dispatchPassword]=useReducer(pswdReducer,{value:'',isValud:null});
 
-  // useEffect(() => {
-  //   const identifier = setTimeout(() => {
-  //     setFormIsValid(enteredEmail.includes('@') && enteredPassword.trim().length > 6);
-  //   }, 500);
-  //   return () => 
-  //   {
-  //     clearTimeout(identifier);
-  //   }  
-  // }, [enteredEmail, enteredPassword]);
+  const {isValid:emailisValid}=emailState; //destructring the object using alias
+  const {isValid:passwordisValid}=passwordState;
+
+  // here we are using useeffect to have a better so that there should be proper previous state value
+  useEffect(() => {
+    const identifier = setTimeout(() => {
+      console.log("checking form validity");
+      setFormIsValid(emailisValid && passwordisValid);
+    }, 500);
+    return () => 
+    {
+      console.log("cleanup running");
+      clearTimeout(identifier);
+    }  
+  }, [emailisValid, passwordisValid]);
 
   const emailChangeHandler = (event) => {
     dispatchEmail({
       type: 'user_input',
       val: event.target.value
     });
-    setFormIsValid(event.target.value.includes('@') && enteredPassword.trim().length > 6);
+    // setFormIsValid(event.target.value.includes('@') && passwordState.value.trim().length > 6);
   };
 
   const passwordChangeHandler = (event) => {
-    setEnteredPassword(event.target.value);
-    setFormIsValid(emailState.isValid && event.target.value.trim().length > 6);
+    // setEnteredPassword(event.target.value);
+    dispatchPassword({
+      type:'password_input',
+      val:event.target.value
+    })
+    // setFormIsValid(emailState.isValid && event.target.value.trim().length > 6);
   };
 
   const validateEmailHandler = () => {
@@ -68,12 +103,15 @@ const Login = (props) => {
   };
 
   const validatePasswordHandler = () => {
-    setPasswordIsValid(enteredPassword.trim().length > 6);
+    // setPasswordIsValid(enteredPassword.trim().length > 6);
+    dispatchPassword({
+      type:'password_valid'
+    })
   };
 
   const submitHandler = (event) => {
     event.preventDefault();
-    props.onLogin(emailState.value, enteredPassword);
+    props.onLogin(emailState.value, passwordState.value);
   };
 
   return (
@@ -93,14 +131,14 @@ const Login = (props) => {
           />
         </div>
         <div
-          className={`${classes.control} ${passwordIsValid === false ? classes.invalid : ''
+          className={`${classes.control} ${passwordState.isValid === false ? classes.invalid : ''
             }`}
         >
           <label htmlFor="password">Password</label>
           <input
             type="password"
             id="password"
-            value={enteredPassword}
+            value={passwordState.value}
             onChange={passwordChangeHandler}
             onBlur={validatePasswordHandler}
           />
